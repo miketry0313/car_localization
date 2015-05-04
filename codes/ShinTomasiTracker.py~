@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+"""
+This class is built to identify and track a object from an image sequence based
+on Lucas Kanade Tracker.
+
+Credit given to OpenCV for library development
+
+@author: Ruoyu Tan
+PhD Student | Pennsylvania State University | t.ruoyu@mgmail.com
+Created on March 22, 2015
+"""
+import cv2
+import numpy as np
+
+class ShinTomasiTracker():
+    """Identify and track the vehicle by using ShinTomasi based tracker """
+    def __init__(self):
+        pass        
+    
+    def track_vehicle(self,input_image,X_INIT,Y_INIT):
+        """track_vehicle function: 
+        
+        Args:
+            input_image: original image matrix
+            X_INIT, Y_INIT: vehicle initial position 
+            
+        Returns:
+            raw_image: tracking image
+            x_cen,y_cen: centroid position obtaind by tracker in each frame
+        """
+        raw_image=input_image
+        x_cen=np.zeros(len(raw_image))
+        y_cen=np.zeros(len(raw_image))
+        x_pre=X_INIT
+        y_pre=Y_INIT
+        for i in range(len(raw_image)):
+            # pre-process image
+            image_pre=raw_image[i]
+            image_pre=cv2.cvtColor(image_pre, cv2.COLOR_BGR2GRAY)
+            # implement ShinTomasiTracker to obtain feature points
+            corner = cv2.goodFeaturesToTrack(image_pre,500,0.1,1)
+            pre_point=[]
+            # select feature points within a certain distance 
+            # from previous centroid position   
+            for j in corner:
+                x,y=j.ravel()
+                dis=pow(x-x_pre,2)+pow(y-y_pre,2)
+                if dis<4000:
+                    cv2.circle(raw_image[i],(x,y),3,255,-1)
+                    pre_point.append((x,y))
+            p0 = np.float32([p for p in pre_point]).reshape(-1, 1, 2)
+            # implement kmean method to find current centroid position
+            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+            ret,label,center=cv2.kmeans(p0,1,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
+            x_pre,y_pre=center.ravel()
+            x_cen[i],y_cen[i]=x_pre,y_pre
+        return(raw_image,x_cen,y_cen)
+        
+       
+    
+ 
